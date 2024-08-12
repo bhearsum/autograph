@@ -139,6 +139,22 @@ signers:
   # when using S3, make sure the relevant AWS credentials are set in the
   # environment that autograph runs in
   #chainuploadlocation: s3://net-mozaws-dev-content-signature/chains/
+  # upload locations may be specified by the cloud provider and region. these
+  # are looked up at runtime based on where a particular autograph instance is
+  # running. special # values of `default` are supported for each and will be
+  # used if the precise lookup fails.
+  # each configuration may upload to 1 or more locations. at the time of
+  # writing, file:/// and s3:// are supported protocols
+  # upload locations may optionally contain special strings of `{cloudProvider}`
+  # and/or `{cloudRegion}`. These will be substituted with values based on
+  # the autograph instance at runtime. Eg: `s3` and `us-east-1` respectively.
+  chainuploadlocations:
+    s3:
+      us-west-2:
+        - s3://net-mozaws-dev-content-signature/chains/
+    default:
+      default:
+        - s3://net-mozaws-dev-content-signatures/{cloudProvider}/{cloudRegion}/chains/
 
   # x5u is the path to the public dir where chains are stored. This MUST end
   # with a trailing slash because filenames will be appended to it.
