@@ -149,6 +149,11 @@ signers:
   # and/or `{cloudRegion}`. These will be substituted with values based on
   # the autograph instance at runtime. Eg: `s3` and `us-east-1` respectively.
   chainuploadlocations:
+    byprovider:
+      
+    default:
+      - s3://net-mozaws-dev-content-signatures/{cloudProvider}/{cloudRegion}/chains/
+
     s3:
       us-west-2:
         - s3://net-mozaws-dev-content-signature/chains/

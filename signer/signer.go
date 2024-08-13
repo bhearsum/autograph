@@ -114,6 +114,13 @@ type Configuration struct {
 	// uploaded to in order for clients to find it at the x5u location.
 	ChainUploadLocation string `json:"chain_upload_location,omitempty" yaml:"chainuploadlocation,omitempty"`
 
+	// Arrays of upload locations, by provider and region
+	// ChainUploadLocations map[string]map[string][]string `json:"chain_upload_locations,omitempty" yaml:"chainuploadlocations,omitempty"`
+	ChainUploadLocations struct {
+		UploadLocations []string
+		Default []string `json:"default,omitempty" yaml:"default,omitempty"`
+	} `json:"chain_upload_locations,omitempty" yaml:"chainuploadlocations,omitempty"`
+
 	// CaCert is the certificate of the root of the pki, when used
 	CaCert string `json:"cacert,omitempty" yaml:"cacert,omitempty"`
 
