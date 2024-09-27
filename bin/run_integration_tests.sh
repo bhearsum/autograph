@@ -11,7 +11,7 @@ docker compose stop db
 docker compose rm -f db
 
 # start db and app servers
-docker compose up -d --force-recreate db app app-hsm
+docker compose up -d --force-recreate db app app-hsm app-hsm-aws
 
 echo "waiting for autograph-app to start"
 while test "true" != "$(docker inspect -f {{.State.Running}} autograph-app)"; do
@@ -20,6 +20,11 @@ while test "true" != "$(docker inspect -f {{.State.Running}} autograph-app)"; do
 done
 echo "waiting for autograph-app-hsm to start"
 while test "true" != "$(docker inspect -f {{.State.Running}} autograph-app-hsm)"; do
+  echo -n "."
+  sleep 1 # wait before checking again
+done
+echo "waiting for autograph-app-hsm-aws to start"
+while test "true" != "$(docker inspect -f {{.State.Running}} autograph-app-hsm-aws)"; do
   echo -n "."
   sleep 1 # wait before checking again
 done
@@ -41,6 +46,12 @@ docker compose run \
 	       -e AUTOGRAPH_ROOT_HASH=$APP_HSM_NORMANDY_ROOT_HASH \
 	       monitor-hsm /go/bin/autograph-monitor
 
+docker compose run \
+	       --rm \
+	       -e AUTOGRAPH_URL=http://autograph-app-hsm-aws:8101/ \
+	       -e AUTOGRAPH_ROOT_HASH=$APP_HSM_NORMANDY_ROOT_HASH \
+	       monitor-hsm /go/bin/autograph-monitor
+
 echo "checking read-only API"
 # user bob doesn't exist in the softhsm config
 docker compose run \
@@ -58,6 +69,13 @@ docker compose run \
 	       --workdir /app/src/autograph/tools/autograph-client \
 	       --entrypoint ./integration_test_api.sh \
 	       app-hsm
+docker compose run \
+	       --rm \
+	       --user 0 \
+	       -e AUTOGRAPH_URL=http://app-hsm-aws:8101 \
+	       --workdir /app/src/autograph/tools/autograph-client \
+	       --entrypoint ./integration_test_api.sh \
+	       app-hsm-aws
 
 echo "checking gpg signing"
 docker compose run \
@@ -85,6 +103,14 @@ docker compose run \
 	       --workdir /app/src/autograph/tools/autograph-client \
 	       --entrypoint ./integration_test_xpis.sh \
 	       app-hsm
+docker compose run \
+	       --rm \
+	       --user 0 \
+	       -e AUTOGRAPH_URL=http://app-hsm-aws:8101 \
+	       -e SIGNER_ID_PREFIX="hsm-" \
+	       --workdir /app/src/autograph/tools/autograph-client \
+	       --entrypoint ./integration_test_xpis.sh \
+	       app-hsm-aws
 
 echo "checking APK signing"
 docker compose run \

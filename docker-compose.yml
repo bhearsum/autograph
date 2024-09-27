@@ -1,6 +1,7 @@
 volumes:
   apptmpdir:
   hsmtmpdir:
+  hsmawstmpdir:
 services:
   db:
     container_name: autograph-db
@@ -40,12 +41,43 @@ services:
       context: tools/softhsm/
     environment:
       - AUTOGRAPH_DB_DSN=host=db user=myautographdbuser dbname=autograph password=myautographdbpassword sslmode=verify-full sslrootcert=/opt/db-root.crt
+      - KMS_PKCS11_CONFIG=/foo
     links:
       - db
     ports:
       - "8001:8001"
     volumes:
       - hsmtmpdir:/tmp/
+    depends_on:
+      - db
+    command:
+      [
+        "/app/src/autograph/bin/wait-for-it.sh",
+        "db:5432",
+        "--",
+        "autograph",
+        "-c",
+        "/app/autograph.softhsm.yaml",
+      ]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/__heartbeat__"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  app-hsm-aws:
+    container_name: autograph-app-hsm
+    image: autograph-app-hsm
+    build:
+      context: tools/softhsm/
+    environment:
+      - AUTOGRAPH_DB_DSN=host=db user=myautographdbuser dbname=autograph password=myautographdbpassword sslmode=verify-full sslrootcert=/opt/db-root.crt
+    links:
+      - db
+    ports:
+      - "8101:8101"
+    volumes:
+      - hsmawstmpdir:/tmp/
     depends_on:
       - db
     command:
@@ -88,6 +120,22 @@ services:
       - AUTOGRAPH_KEY=19zd4w3xirb5syjgdx8atq6g91m03bdsmzjifs2oddivswlu9qs
     ports:
       - "9001:8080"
+    links:
+      - app-hsm
+    depends_on:
+      - app-hsm
+
+  monitor-hsm-aws:
+    container_name: autograph-monitor-hsm
+    image: autograph-monitor
+    build:
+      context: tools/autograph-monitor/
+      dockerfile: Dockerfile.monitor-selftest
+    environment:
+      - AUTOGRAPH_URL=http://autograph-app-hsm-aws:8101/
+      - AUTOGRAPH_KEY=19zd4w3xirb5syjgdx8atq6g91m03bdsmzjifs2oddivswlu9qs
+    ports:
+      - "9101:8180"
     links:
       - app-hsm
     depends_on:
