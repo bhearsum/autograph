@@ -673,7 +673,11 @@ var unlimitedBytesReaderPassingTestCases = []struct {
 	{
 		requestedBytes:                1,
 		expectedSessions:              1,
-		expectedPkcs11RandReaderBytes: [][]byte{{'A'}},
+		// TODO: this is used further down right as the expectations for GenerateRandom
+		// _and_ to build up the expected return value from Read()
+		// we should probably separate this out (like we do for the failing tests)
+		// so that the test function can assert the right things easily
+		expectedPkcs11RandReaderBytes: [][]byte{bytes.Repeat([]byte("A"), 8)},
 	},
 	{
 		requestedBytes:                1024,
@@ -710,7 +714,7 @@ var unlimitedBytesReaderPassingTestCases = []struct {
 		expectedPkcs11RandReaderBytes: [][]byte{
 			bytes.Repeat([]byte("A"), 1024),
 			bytes.Repeat([]byte("B"), 1024),
-			{'C'},
+			bytes.Repeat([]byte("C"), 8),
 		},
 	},
 	{

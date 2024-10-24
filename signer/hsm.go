@@ -118,8 +118,17 @@ func (ubrr *unlimitedBytesRandReader) Read(data []byte) (int, error) {
 	for need > 0 {
 		var bytesRead int
 		next := min(need, 1024)
-		bytesRead, err = ubrr.rr.Read(data[n : n+next])
-		n += bytesRead
+		// TODO: currently the addition of this block is causing one
+		// or more of the tests to hang
+		if next < 8 {
+			readBytes := make([]byte, 8)
+			bytesRead, err = ubrr.rr.Read(readBytes)
+			copy(data[n : n + need], readBytes[0 : need])
+			n += min(bytesRead, need)
+		} else {
+			bytesRead, err = ubrr.rr.Read(data[n : n+next])
+			n += bytesRead
+		}
 		if err != nil {
 			return n, err
 		}
